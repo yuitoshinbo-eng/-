@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>商談ログ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --s1: #f7f7f7;
+  --s2: #f0f0f0;
+  --s3: #e8e8e8;
+  --border: #dcdcdc;
+  --text: #1a1a1a;
+  --muted: #888888;
+  --red: #e03030;
+  --green: #00aa66;
+  --blue: #2266dd;
+  --gold: #cc8800;
+  --purple: #8844dd;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--s1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bnav-btn {
+  flex: 1;
+  padding: 12px 4px 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+
+.bnav-btn .ico { font-size: 20px; line-height: 1; }
+.bnav-btn.active { color: var(--blue); }
+
+/* PAGE */
+.page {
+  display: none;
+  padding: 0 0 80px;
+  min-height: 100vh;
+}
+.page.active { display: block; }
+
+/* HEADER */
+.page-header {
+  position: sticky;
+  top: 0;
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.page-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* LOG FORM — 超速入力設計 */
+.quick-log {
+  padding: 12px;
+}
+
+/* RESULT CHIPS */
+.chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 14px 8px;
+  background: var(--s2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip span { font-size: 22px; }
+.chip.won.sel { border-color: var(--green); color: var(--green); background: rgba(0,204,119,0.1); }
+.chip.follow.sel { border-color: var(--blue); color: var(--blue); background: rgba(68,136,255,0.1); }
+.chip.pending.sel { border-color: var(--gold); color: var(--gold); background: rgba(255,170,0,0.1); }
+.chip.lost.sel { border-color: var(--red); color: var(--red); background: rgba(255,68,68,0.1); }
+
+/* INDUSTRY CHIPS */
+.ind-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.ind-chip {
+  padding: 7px 12px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ind-chip.sel {
+  background: rgba(68,136,255,0.15);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+/* FIELD */
+.field {
+  margin-bottom: 10px;
+}
+
+.field-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.field-label .required {
+  color: var(--red);
+  margin-left: 2px;
+}
+
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: none;
+  -webkit-appearance: none;
+}
+
+textarea:focus, input:focus {
+  border-color: var(--blue);
+}
+
+textarea::placeholder, input::placeholder {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* STAR RATING */
+.stars {
+  display: flex;
+  gap: 8px;
+}
+
+.star {
+  font-size: 28px;
+  cursor: pointer;
+  transition: transform 0.1s;
+  filter: grayscale(1) opacity(0.4);
+}
+
+.star.lit {
+  filter: none;
+  transform: scale(1.1);
+}
+
+/* SUBMIT */
+.btn-log {
+  width: 100%;
+  padding: 16px;
+  background: var(--blue);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+
+.btn-log:active { transform: scale(0.98); opacity: 0.9; }
+.btn-log:disabled { background: var(--s3); color: var(--muted); }
+
+/* AI FEEDBACK SHEET */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+}
+
+.sheet-overlay.open { display: flex; animation: fadeIn 0.2s; }
+
+.sheet {
+  width: 100%;
+  max-height: 85vh;
+  background: var(--s1);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sheet-title {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-tag {
+  background: var(--purple);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.sheet-close {
+  width: 30px;
+  height: 30px;
+  background: var(--s3);
+  border: none;
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  padding: 16px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.loading-dots::after {
+  content: '...';
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%,20% { content: '.'; }
+  40%,60% { content: '..'; }
+  80%,100% { content: '...'; }
+}
+
+.feedback-text {
+  font-size: 14px;
+  line-height: 2;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.feedback-section {
+  margin-bottom: 16px;
+  padding: 14px;
+  background: var(--s2);
+  border-radius: 10px;
+  border-left: 3px solid var(--purple);
+}
+
+/* HISTORY LIST */
+.history-list {
+  padding: 12px;
+}
+
+.log-item {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.log-item-head {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.result-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-won { background: var(--green); }
+.dot-follow { background: var(--blue); }
+.dot-pending { background: var(--gold); }
+.dot-lost { background: var(--red); }
+
+.log-company {
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-date {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.log-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-won { background: rgba(0,204,119,0.15); color: var(--green); }
+.badge-follow { background: rgba(68,136,255,0.15); color: var(--blue); }
+.badge-pending { background: rgba(255,170,0,0.15); color: var(--gold); }
+.badge-lost { background: rgba(255,68,68,0.15); color: var(--red); }
+
+.log-item-body {
+  display: none;
+  padding: 0 14px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.log-item-body.open { display: block; }
+
+.log-detail {
+  padding: 10px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+
+.log-detail:last-child { border-bottom: none; }
+
+.log-detail-key {
+  color: var(--muted);
+  width: 80px;
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding-top: 1px;
+}
+
+.log-detail-val {
+  font-size: 13px;
+  line-height: 1.7;
+  flex: 1;
+}
+
+.log-ai-feedback {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--s3);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c0c0c0;
+  border-left: 2px solid var(--purple);
+  white-space: pre-wrap;
+}
+
+.log-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-sm.danger { border-color: var(--red); color: var(--red); }
+
+/* ANALYSIS PAGE */
+.analysis-wrap {
+  padding: 12px;
+}
+
+.ana-card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.ana-card-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ana-icon { font-size: 20px; }
+
+.ana-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.ana-card-body {
+  padding: 14px 16px;
+}
+
+/* STATS ROW */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat-box {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* BAR CHART */
+.bar-item {
+  margin-bottom: 10px;
+}
+
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.bar-label span:last-child {
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+.bar-track {
+  height: 6px;
+  background: var(--s3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* AI ANALYSIS BUTTON */
+.btn-analysis {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: opacity 0.15s;
+}
+
+.btn-analysis:active { opacity: 0.85; }
+.btn-analysis:disabled { background: var(--s3); color: var(--muted); }
+
+.analysis-result {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: none;
+}
+
+.analysis-result.show { display: block; animation: fadeIn 0.3s; }
+
+.analysis-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.analysis-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.analysis-section-title {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--purple);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.analysis-section-body {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.empty-msg {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+}
+
+.empty-msg .e-icon { font-size: 44px; margin-bottom: 12px; }
+.empty-msg p { font-size: 13px; line-height: 1.8; }
+
+/* SECTION LABEL */
+.sec-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 8px 0 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOG PAGE ===== -->
+<div id="page-log" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">商談ログ</div>
+      <div class="page-sub" id="logDateLabel"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="logCount">0件記録</div>
+  </div>
+
+  <div class="quick-log">
+
+    <!-- 結果 -->
+    <div class="sec-label">結果 RESULT</div>
+    <div class="chips">
+      <button class="chip won" onclick="selectResult('won',this)"><span>✅</span>受注</button>
+      <button class="chip follow" onclick="selectResult('follow',this)"><span>🔄</span>フォロー</button>
+      <button class="chip pending" onclick="selectResult('pending',this)"><span>⏳</span>検討中</button>
+      <button class="chip lost" onclick="selectResult('lost',this)"><span>❌</span>失注</button>
+    </div>
+
+    <!-- 会社名 -->
+    <div class="field">
+      <span class="field-label">会社名・店舗名<span class="required">*</span></span>
+      <input type="text" id="f-company" placeholder="例：〇〇飲食店" autocomplete="off">
+    </div>
+
+    <!-- 業種 -->
+    <div class="field">
+      <span class="field-label">業種</span>
+      <div class="ind-chips" id="indChips">
+        <button class="ind-chip" onclick="selectInd(this)">飲食</button>
+        <button class="ind-chip" onclick="selectInd(this)">美容</button>
+        <button class="ind-chip" onclick="selectInd(this)">医療</button>
+        <button class="ind-chip" onclick="selectInd(this)">宿泊・観光</button>
+        <button class="ind-chip" onclick="selectInd(this)">不動産</button>
+        <button class="ind-chip" onclick="selectInd(this)">教育</button>
+        <button class="ind-chip" onclick="selectInd(this)">その他</button>
+      </div>
+    </div>
+
+    <!-- 顧客の悩み -->
+    <div class="field">
+      <span class="field-label">顧客の悩み</span>
+      <textarea id="f-pain" rows="2" placeholder="例：口コミが増えない、Googleマップ上位に出ない"></textarea>
+    </div>
+
+    <!-- 刺さったこと -->
+    <div class="field">
+      <span class="field-label">刺さったトーク・機能</span>
+      <textarea id="f-hit" rows="2" placeholder="例：3倍表示の実績、AI口コミ返信が楽そうと言われた"></textarea>
+    </div>
+
+    <!-- 断られた理由 -->
+    <div class="field">
+      <span class="field-label">断られた・迷っている理由</span>
+      <textarea id="f-obj" rows="2" placeholder="例：月3万円が高い、今は予算がない"></textarea>
+    </div>
+
+    <!-- 気づき -->
+    <div class="field">
+      <span class="field-label">気づき・メモ</span>
+      <textarea id="f-memo" rows="3" placeholder="先輩の動き・顧客の反応・自分の改善点など自由に"></textarea>
+    </div>
+
+    <!-- 自己評価 -->
+    <div class="field">
+      <span class="field-label">自己評価</span>
+      <div class="stars" id="starsEl">
+        <span class="star" onclick="setStar(1)">⭐</span>
+        <span class="star" onclick="setStar(2)">⭐</span>
+        <span class="star" onclick="setStar(3)">⭐</span>
+        <span class="star" onclick="setStar(4)">⭐</span>
+        <span class="star" onclick="setStar(5)">⭐</span>
+      </div>
+    </div>
+
+    <button class="btn-log" id="btnLog" onclick="saveLog()">記録してAIフィードバックをもらう →</button>
+
+  </div>
+</div>
+
+<!-- ===== HISTORY PAGE ===== -->
+<div id="page-history" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">履歴</div>
+      <div class="page-sub">全商談ログ</div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="histCount">0件</div>
+  </div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<!-- ===== ANALYSIS PAGE ===== -->
+<div id="page-analysis" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">AI分析</div>
+      <div class="page-sub">蓄積データから洞察を抽出</div>
+    </div>
+  </div>
+
+  <div class="analysis-wrap">
+    <div id="statsSection"></div>
+
+    <button class="btn-analysis" id="btnAnalysis" onclick="runAnalysis()">
+      🔍 AIが全商談を分析する
+    </button>
+
+    <div class="analysis-result" id="analysisResult">
+      <div id="analysisBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI FEEDBACK SHEET ===== -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <span class="ai-tag">AI</span>
+        役員目線フィードバック
+      </div>
+      <button class="sheet-close" onclick="closeSheetDirect()">✕</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bnav-btn active" onclick="switchPage('log',this)">
+    <span class="ico">✏️</span>記録
+  </button>
+  <button class="bnav-btn" onclick="switchPage('history',this)">
+    <span class="ico">📋</span>履歴
+  </button>
+  <button class="bnav-btn" onclick="switchPage('analysis',this)">
+    <span class="ico">🔍</span>AI分析
+  </button>
+</div>
+
+<script>
+// ===== STATE =====
+let logs = [];
+let selectedResult = '';
+let selectedInd = '';
+let starVal = 0;
+
+// ===== INIT =====
+window.addEventListener('load', async () => {
+  const now = new Date();
+  document.getElementById('logDateLabel').textContent =
+    now.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
+  await loadLogs();
+});
+
+// ===== STORAGE =====
+async function loadLogs() {
+  try {
+    const r = await window.storage.get('sales-logs-v2');
+    logs = r ? JSON.parse(r.value) : [];
+  } catch(e) { logs = []; }
+  updateCount();
+}
+
+async function saveLogs() {
+  try {
+    await window.storage.set('sales-logs-v2', JSON.stringify(logs));
+  } catch(e) { console.error(e); }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('logCount').textContent = `${logs.length}件記録`;
+  document.getElementById('histCount').textContent = `${logs.length}件`;
+}
+
+// ===== NAV =====
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if(id === 'history') renderHistory();
+  if(id === 'analysis') renderStats();
+}
+
+// ===== FORM =====
+function selectResult(val, btn) {
+  selectedResult = val;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function selectInd(btn) {
+  selectedInd = btn.textContent;
+  document.querySelectorAll('.ind-chip').forEach(c => c.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function setStar(n) {
+  starVal = n;
+  document.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('lit', i < n);
+  });
+}
+
+function resetForm() {
+  selectedResult = '';
+  selectedInd = '';
+  starVal = 0;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('.ind-chip').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('.star').forEach(s => s.classList.remove('lit'));
+  ['f-company','f-pain','f-hit','f-obj','f-memo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+// ===== SAVE & AI FEEDBACK =====
+async function saveLog() {
+  const company = document.getElementById('f-company').value.trim();
+  if(!company) { alert('会社名を入力してください'); return; }
+  if(!selectedResult) { alert('商談結果を選択してください'); return; }
+
+  const log = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('ja-JP', { month:'2-digit', day:'2-digit' }),
+    fullDate: new Date().toISOString(),
+    company,
+    industry: selectedInd,
+    result: selectedResult,
+    pain: document.getElementById('f-pain').value.trim(),
+    hit: document.getElementById('f-hit').value.trim(),
+    objection: document.getElementById('f-obj').value.trim(),
+    memo: document.getElementById('f-memo').value.trim(),
+    star: starVal,
+    aiAdvice: ''
+  };
+
+  logs.unshift(log);
+  await saveLogs();
+
+  // Show sheet
+  openSheet();
+
+  const btn = document.getElementById('btnLog');
+  btn.disabled = true;
+
+  const resultMap = { won:'受注', follow:'フォローアップ', pending:'検討中', lost:'失注' };
+
+  const prompt = `あなたは上場企業の敏腕役員です。2年後に役員を目指している新人営業の商談日報を読んで、鋭く・具体的・率直にフィードバックしてください。
+
+商談データ：
+- 会社：${log.company}（${log.industry || '業種未記入'}）
+- 結果：${resultMap[log.result]}
+- 顧客の悩み：${log.pain || '未記入'}
+- 刺さったトーク：${log.hit || '未記入'}
+- 断られた理由：${log.objection || 'なし'}
+- メモ：${log.memo || '未記入'}
+- 自己評価：${log.star ? log.star + '/5' : '未評価'}
+
+以下の4点を、それぞれ2〜3文で簡潔に答えてください：
+
+【良かった点】
+【改善すべき点】
+【次回の具体的アクション（＝次にやること）】
+【役員目線の一言】`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text||'').join('') || '';
+
+    logs[0].aiAdvice = text;
+    await saveLogs();
+
+    document.getElementById('sheetBody').innerHTML =
+      `<div class="feedback-text">${text}</div>`;
+  } catch(e) {
+    document.getElementById('sheetBody').innerHTML =
+      `<div style="color:var(--muted);padding:20px;font-size:13px">フィードバックの取得に失敗しました</div>`;
+  }
+
+  btn.disabled = false;
+  resetForm();
+}
+
+// ===== SHEET =====
+function openSheet() {
+  const overlay = document.getElementById('sheetOverlay');
+  overlay.classList.add('open');
+  document.getElementById('sheetBody').innerHTML =
+    `<div class="sheet-loading"><span class="loading-dots">AI分析中</span></div>`;
+}
+
+function closeSheet(e) {
+  if(e.target === document.getElementById('sheetOverlay')) closeSheetDirect();
+}
+
+function closeSheetDirect() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+}
+
+// ===== HISTORY =====
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if(logs.length === 0) {
+    list.innerHTML = `<div class="empty-msg"><div class="e-icon">📋</div><p>まだ記録がありません。<br>商談後にすぐ入力しましょう！</p></div>`;
+    return;
+  }
+
+  const resConf = {
+    won:     { label:'受注',    cls:'badge-won',     dot:'dot-won' },
+    follow:  { label:'フォロー', cls:'badge-follow',  dot:'dot-follow' },
+    pending: { label:'検討中',  cls:'badge-pending', dot:'dot-pending' },
+    lost:    { label:'失注',    cls:'badge-lost',    dot:'dot-lost' },
+  };
+
+  list.innerHTML = logs.map(l => {
+    const rc = resConf[l.result] || resConf.pending;
+    return `
+    <div class="log-item">
+      <div class="log-item-head" onclick="toggleLog('log-${l.id}')">
+        <div class="result-dot ${rc.dot}"></div>
+        <div class="log-company">${l.company}</div>
+        <span class="log-badge ${rc.cls}">${rc.label}</span>
+        <div class="log-date">${l.date}</div>
+      </div>
+      <div class="log-item-body" id="log-${l.id}">
+        ${l.industry ? `<div class="log-detail"><div class="log-detail-key">業種</div><div class="log-detail-val">${l.industry}</div></div>` : ''}
+        ${l.pain ? `<div class="log-detail"><div class="log-detail-key">顧客の悩み</div><div class="log-detail-val">${l.pain}</div></div>` : ''}
+        ${l.hit ? `<div class="log-detail"><div class="log-detail-key">刺さった点</div><div class="log-detail-val">${l.hit}</div></div>` : ''}
+        ${l.objection ? `<div class="log-detail"><div class="log-detail-key">断られた理由</div><div class="log-detail-val">${l.objection}</div></div>` : ''}
+        ${l.memo ? `<div class="log-detail"><div class="log-detail-key">メモ</div><div class="log-detail-val">${l.memo}</div></div>` : ''}
+        ${l.star ? `<div class="log-detail"><div class="log-detail-key">自己評価</div><div class="log-detail-val">${'⭐'.repeat(l.star)}</div></div>` : ''}
+        ${l.aiAdvice ? `<div class="log-ai-feedback">${l.aiAdvice}</div>` : ''}
+        <div class="log-actions">
+          <button class="btn-sm danger" onclick="deleteLog(${l.id})">削除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleLog(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+async function deleteLog(id) {
+  if(!confirm('削除しますか？')) return;
+  logs = logs.filter(l => l.id !== id);
+  await saveLogs();
+  renderHistory();
+  renderStats();
+}
+
+// ===== STATS =====
+function renderStats() {
+  const sec = document.getElementById('statsSection');
+  if(logs.length === 0) {
+    sec.innerHTML = `<div class="empty-msg"><div class="e-icon">📊</div><p>商談を記録すると<br>集計が表示されます</p></div>`;
+    return;
+  }
+
+  const total = logs.length;
+  const won = logs.filter(l => l.result === 'won').length;
+  const winRate = Math.round(won / total * 100);
+  const follow = logs.filter(l => l.result === 'follow').length;
+  const lost = logs.filter(l => l.result === 'lost').length;
+
+  // Industry
+  const byInd = {};
+  logs.forEach(l => { if(l.industry) byInd[l.industry] = (byInd[l.industry]||0)+1; });
+  const indEntries = Object.entries(byInd).sort((a,b)=>b[1]-a[1]);
+  const maxInd = indEntries[0]?.[1] || 1;
+
+  sec.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--blue)">${total}</div>
+        <div class="stat-label">総商談数</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--green)">${won}</div>
+        <div class="stat-label">受注数</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--gold)">${winRate}%</div>
+        <div class="stat-label">受注率</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--red)">${lost}</div>
+        <div class="stat-label">失注数</div>
+      </div>
+    </div>
+    ${indEntries.length > 0 ? `
+    <div class="ana-card" style="margin-bottom:14px">
+      <div class="ana-card-header">
+        <span class="ana-icon">🏪</span>
+        <span class="ana-card-title">業種別 商談数</span>
+      </div>
+      <div class="ana-card-body">
+        ${indEntries.map(([ind, cnt]) => `
+          <div class="bar-item">
+            <div class="bar-label"><span>${ind}</span><span>${cnt}件</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${cnt/maxInd*100}%;background:var(--blue)"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ===== AI ANALYSIS =====
+async function runAnalysis() {
+  if(logs.length < 2) {
+    alert('分析には2件以上の商談記録が必要です');
+    return;
+  }
+
+  const btn = document.getElementById('btnAnalysis');
+  btn.disabled = true;
+  btn.textContent = '🔍 分析中...';
+
+  const result = document.getElementById('analysisResult');
+  const body = document.getElementById('analysisBody');
+  result.className = 'analysis-result show';
+  body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><span class="loading-dots">全商談を分析中</span></div>`;
+
+  const summary = logs.map((l,i) => {
+    const rm = { won:'受注', follow:'フォロー', pending:'検討中', lost:'失注' };
+    return `[${i+1}] ${l.company}（${l.industry||'業種不明'}）/ ${rm[l.result]||l.result} / 悩み:${l.pain||'—'} / 刺さった:${l.hit||'—'} / 断られた理由:${l.objection||'—'} / メモ:${l.memo||'—'}`;
+  }).join('\n');
+
+  const prompt = `あなたは上場企業の営業戦略役員です。2年後に役員を目指している新人営業の全商談記録を分析してください。
+
+【全商談記録 ${logs.length}件】
+${summary}
+
+以下の6つの観点で分析し、それぞれ具体的かつ率直に答えてください。箇条書きや番号を使ってわかりやすく。
+
+【1. 改善点の共通点】
+複数の商談に共通する改善すべきパターンは何か
+
+【2. 顧客の悩みの共通点】
+顧客が共通して抱えている悩みや課題は何か
+
+【3. 契約に至る理由の共通点】
+受注できた商談に共通するポイントは何か
+
+【4. 失注の共通パターン】
+断られた・失注した商談に共通する原因は何か
+
+【5. 新たに見えてきた課題】
+データ全体から見えてくる、まだ対処できていない課題は何か
+
+【6. 役員目線の総評と次の打ち手】
+初月売上1位・2年後役員に向けて、今すぐ変えるべき1つのことは何か`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text||'').join('') || '';
+
+    // Parse sections
+    const sections = [
+      { key: '【1. 改善点の共通点】', color: 'var(--red)' },
+      { key: '【2. 顧客の悩みの共通点】', color: 'var(--gold)' },
+      { key: '【3. 契約に至る理由の共通点】', color: 'var(--green)' },
+      { key: '【4. 失注の共通パターン】', color: 'var(--red)' },
+      { key: '【5. 新たに見えてきた課題】', color: 'var(--purple)' },
+      { key: '【6. 役員目線の総評と次の打ち手】', color: 'var(--blue)' },
+    ];
+
+    let html = '';
+    sections.forEach((sec, i) => {
+      const start = text.indexOf(sec.key);
+      const end = i < sections.length-1 ? text.indexOf(sections[i+1].key) : text.length;
+      if(start !== -1) {
+        const content = text.slice(start + sec.key.length, end > 0 ? end : undefined).trim();
+        html += `
+          <div class="analysis-section">
+            <div class="analysis-section-title" style="color:${sec.color}">${sec.key.replace(/【|】/g,'')}</div>
+            <div class="analysis-section-body">${content}</div>
+          </div>`;
+      }
+    });
+
+    body.innerHTML = html || `<div class="analysis-section-body">${text}</div>`;
+  } catch(e) {
+    body.innerHTML = `<div style="color:var(--muted);font-size:13px">分析に失敗しました。もう一度お試しください。</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 AIが全商談を分析する';
+}
+</script>
+</body>
+</html>
